@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Docplanner.Application\Docplanner.Application.csproj" />
+    <ProjectReference Include="..\Docplanner.Common\Docplanner.Common.csproj" />
+  </ItemGroup>
+
+</Project>
