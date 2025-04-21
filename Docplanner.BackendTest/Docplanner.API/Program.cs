@@ -3,8 +3,12 @@ using Docplanner.Application.Interfaces;
 using Docplanner.Application.Services;
 using Docplanner.Common.Converters;
 using Docplanner.Infrastructure.Configuration;
+using dotenv.net;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
+
+// Load .env file into environment
+DotEnv.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +31,9 @@ builder.Services.AddSwaggerDocument(config =>
 });
 
 builder.Services.Configure<SlotApiOptions>(builder.Configuration.GetSection("SlotApi"));
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddEnvironmentVariables();
 builder.Services.AddHttpClient<ISlotServiceAdapter, SlotServiceAdapter>((provider, client) =>
 {
     var options = provider.GetRequiredService<IOptions<SlotApiOptions>>().Value;
