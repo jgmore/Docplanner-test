@@ -6,7 +6,7 @@ namespace Docplanner.Infrastructure.Adapters;
 
 public class MockSlotServiceAdapter : ISlotServiceAdapter
 {
-    public async Task<IEnumerable<AvailabilitySlotDto>> FetchWeeklyAvailabilityAsync(string monday)
+    public async Task<DataResponseDto> FetchWeeklyAvailabilityAsync(string monday)
     {
         // Simulate network/API latency
         await Task.Delay(100);
@@ -19,8 +19,9 @@ public class MockSlotServiceAdapter : ISlotServiceAdapter
         {
             throw new ArgumentException("Invalid date format for 'monday'", nameof(monday));
         }
+        DataResponseDto dataResponseDto = new DataResponseDto();
 
-        return new List<AvailabilitySlotDto>
+        dataResponseDto.AvailableSlots = new List<AvailabilitySlotDto>
         {
             new AvailabilitySlotDto {
                 Start = mondayDate.AddHours(10),
@@ -35,6 +36,8 @@ public class MockSlotServiceAdapter : ISlotServiceAdapter
                 IsAvailable = true
             }
         };
+        dataResponseDto.FacilityId = "Id1";
+        return dataResponseDto;
     }
 
     public async Task<ApiResponseDto<bool>> TakeSlotAsync(BookingRequestDto request)
@@ -76,6 +79,7 @@ public class MockSlotServiceAdapter : ISlotServiceAdapter
         }
 
         return ApiResponseDto<bool>.CreateSuccess(
+            "Id1",
             true,
             "Mock booking confirmed"
         );

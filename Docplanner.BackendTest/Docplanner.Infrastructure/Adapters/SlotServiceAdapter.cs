@@ -11,7 +11,7 @@ public class SlotServiceAdapter(HttpClient client, IOptions<SlotApiOptions> opti
 {
     private readonly SlotApiOptions _config = options.Value;
 
-    public async Task<IEnumerable<AvailabilitySlotDto>> FetchWeeklyAvailabilityAsync(string monday)
+    public async Task<DataResponseDto> FetchWeeklyAvailabilityAsync(string monday)
     {
         AddAuthHeader();
         var response = await client.GetAsync($"{_config.BaseUrl}/GetWeeklyAvailability/{monday}");
@@ -21,8 +21,11 @@ public class SlotServiceAdapter(HttpClient client, IOptions<SlotApiOptions> opti
         var weeklyAvailability = JsonSerializer.Deserialize<WeeklyAvailabilityResponseDto>(json,
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
+        DataResponseDto dataResponseDto = new DataResponseDto();
         // Transformar la respuesta completa en una lista de slots disponibles
-        return ConvertToAvailableSlots(weeklyAvailability, monday);
+        dataResponseDto.AvailableSlots = ConvertToAvailableSlots(weeklyAvailability, monday);
+        dataResponseDto.FacilityId = weeklyAvailability.Facility.FacilityId;
+        return dataResponseDto;
     }
 
     private IEnumerable<AvailabilitySlotDto> ConvertToAvailableSlots(

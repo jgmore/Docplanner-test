@@ -18,7 +18,7 @@ public class SlotServiceTests
         var loggerMock = new Mock<ILogger<SlotService>>();
 
         var mondayDate = DateTime.ParseExact("20250415", "yyyyMMdd", CultureInfo.InvariantCulture);
-
+        DataResponseDto dataResponse = new DataResponseDto();
         var mockSlots = new List<AvailabilitySlotDto>
         {
             new()
@@ -29,9 +29,11 @@ public class SlotServiceTests
                 IsAvailable = true
             }
         };
+        dataResponse.AvailableSlots = mockSlots;
+        dataResponse.FacilityId = "Id1";
 
         adapterMock.Setup(a => a.FetchWeeklyAvailabilityAsync("20250415"))
-            .ReturnsAsync(mockSlots);
+            .ReturnsAsync(dataResponse);
 
         var service = new SlotService(adapterMock.Object, loggerMock.Object);
 
@@ -52,7 +54,7 @@ public class SlotServiceTests
         var loggerMock = new Mock<ILogger<SlotService>>();
 
         adapterMock.Setup(a => a.TakeSlotAsync(It.IsAny<BookingRequestDto>()))
-            .ReturnsAsync(ApiResponseDto<bool>.CreateSuccess(true, "Booked successfully"));
+            .ReturnsAsync(ApiResponseDto<bool>.CreateSuccess("Id1",true, "Booked successfully"));
 
         var service = new SlotService(adapterMock.Object, loggerMock.Object);
 

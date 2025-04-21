@@ -21,11 +21,12 @@ public class SlotService : ISlotService
         {
             _logger.LogInformation("Fetching availability for week starting {Monday}", monday);
             var slots = await _adapter.FetchWeeklyAvailabilityAsync(monday);
-            _logger.LogInformation("Retrieved {Count} slots", slots.Count());
+            _logger.LogInformation("Retrieved {Count} slots", slots.AvailableSlots.Count());
 
             return ApiResponseDto<IEnumerable<AvailabilitySlotDto>>.CreateSuccess(
-                slots,
-                $"Retrieved {slots.Count()} slots for week starting {monday}"
+                slots.FacilityId,
+                slots.AvailableSlots,
+                $"Retrieved {slots.AvailableSlots.Count()} slots for week starting {monday}"
             );
         }
         catch (Exception ex)

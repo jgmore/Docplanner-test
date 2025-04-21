@@ -2,6 +2,7 @@ namespace Docplanner.Common.DTOs;
 
 public class BookingRequestDto
 {
+    public string FacilityId { get; set; } = string.Empty;
     public string Start { get; set; } = string.Empty;
     public string End { get; set; } = string.Empty;
     public string Comments { get; set; } = string.Empty;
