@@ -15,7 +15,12 @@ public class SlotServiceAdapter(HttpClient client, IOptions<SlotApiOptions> opti
     {
         AddAuthHeader();
         var response = await client.GetAsync($"{_config.BaseUrl}/GetWeeklyAvailability/{monday}");
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            throw new ApplicationException($"Slot Service error: {(int)response.StatusCode} - {error}");
+        }
+
 
         var json = await response.Content.ReadAsStringAsync();
         var weeklyAvailability = JsonSerializer.Deserialize<WeeklyAvailabilityResponseDto>(json,
