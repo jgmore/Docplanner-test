@@ -26,11 +26,28 @@ public class SlotServiceAdapter(HttpClient client, IOptions<SlotApiOptions> opti
         var weeklyAvailability = JsonSerializer.Deserialize<WeeklyAvailabilityResponseDto>(json,
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        DataResponseDto dataResponseDto = new DataResponseDto();
-        // Transformar la respuesta completa en una lista de slots disponibles
-        dataResponseDto.AvailableSlots = ConvertToAvailableSlots(weeklyAvailability, monday);
-        dataResponseDto.FacilityId = weeklyAvailability.Facility.FacilityId;
-        return dataResponseDto;
+        if (weeklyAvailability == null)
+        {
+            throw new InvalidOperationException("Deserialization of WeeklyAvailabilityResponseDto returned null.");
+        }
+
+        if (weeklyAvailability.Facility == null || string.IsNullOrWhiteSpace(weeklyAvailability.Facility.FacilityId))
+        {
+            throw new InvalidDataException("Facility data is missing or incomplete in the Slot API response.");
+        }
+
+        if (weeklyAvailability.SlotDurationMinutes <= 0)
+        {
+            throw new InvalidDataException("Slot duration is invalid or not provided.");
+        }
+
+        var availableSlots = ConvertToAvailableSlots(weeklyAvailability, monday);
+
+        return new DataResponseDto
+        {
+            AvailableSlots = availableSlots,
+            FacilityId = weeklyAvailability.Facility.FacilityId
+        };
     }
 
     private IEnumerable<AvailabilitySlotDto> ConvertToAvailableSlots(

@@ -12,6 +12,9 @@ public class BookingRequestValidator : AbstractValidator<BookingRequestDto>
 
         RuleFor(x => x.End)
             .NotEmpty().WithMessage("End time is required");
+        
+        RuleFor(x => x.FacilityId)
+            .NotEmpty().WithMessage("FacilityId is required");
 
         RuleFor(x => x.Patient).NotNull().WithMessage("Patient information is required");
 
