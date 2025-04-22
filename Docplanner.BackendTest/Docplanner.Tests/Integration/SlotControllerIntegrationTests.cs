@@ -5,7 +5,7 @@ using System.Text.Json;
 using Docplanner.Common.DTOs;
 using Xunit;
 
-namespace Docplanner.Tests;
+namespace Docplanner.Tests.Integration;
 
 public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFactory>
 {
@@ -66,12 +66,10 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/slots/book", request);
-        var content = await response.Content.ReadFromJsonAsync<ApiResponseDto<bool>>();
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.NotNull(content);
-        Assert.False(content!.Success);
+        Assert.False(response.IsSuccessStatusCode);
     }
 
     [Fact]
@@ -80,6 +78,7 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
         // Arrange - Creamos un request con datos válidos
         var request = new BookingRequestDto
         {
+            FacilityId = "Id1",
             Start = "2025-04-15 10:00:00",
             End = "2025-04-15 10:20:00",
             Comments = "Test booking",

@@ -35,6 +35,10 @@ public class SlotsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponseDto<bool>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> BookSlot([FromBody] BookingRequestDto request)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
         var result = await _slotService.BookSlotAsync(request);
 
         if (result.Success)

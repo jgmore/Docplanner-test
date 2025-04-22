@@ -1,9 +1,14 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Docplanner.Common.DTOs;
 
 public class BookingRequestDto
 {
+    [Required]
     public string FacilityId { get; set; } = string.Empty;
+    [Required]
     public string Start { get; set; } = string.Empty;
+    [Required]
     public string End { get; set; } = string.Empty;
     public string Comments { get; set; } = string.Empty;
     public PatientDto Patient { get; set; } = new PatientDto();
