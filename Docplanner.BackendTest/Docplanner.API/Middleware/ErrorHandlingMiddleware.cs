@@ -16,13 +16,17 @@ public class ErrorHandlingMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
+        var correlationId = context.Request.Headers["X-Correlation-ID"].FirstOrDefault() ?? Guid.NewGuid().ToString();
+
+        context.Response.Headers["X-Correlation-ID"] = correlationId;
+        context.Items["CorrelationId"] = correlationId;
         try
         {
             await _next(context);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An unhandled exception occurred");
+            _logger.LogError(ex, "An unhandled exception occurred. Correlation ID: {correlationId}", correlationId);
             await HandleExceptionAsync(context, ex);
         }
     }

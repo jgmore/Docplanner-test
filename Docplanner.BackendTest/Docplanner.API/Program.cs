@@ -106,9 +106,12 @@ builder.Services.AddRateLimiter(options =>
 });
 
 builder.Services.Configure<SlotApiOptions>(builder.Configuration.GetSection("SlotApi"));
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddEnvironmentVariables();
+
 builder.Services.AddHttpClient<ISlotServiceAdapter, SlotServiceAdapter>((provider, client) =>
 {
     var options = provider.GetRequiredService<IOptions<SlotApiOptions>>().Value;
@@ -116,6 +119,7 @@ builder.Services.AddHttpClient<ISlotServiceAdapter, SlotServiceAdapter>((provide
 });
 
 builder.Services.AddScoped<ISlotService, SlotService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 
 builder.Services.AddLogging();
 var app = builder.Build();
