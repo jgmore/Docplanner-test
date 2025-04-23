@@ -12,7 +12,10 @@ public class BookingRequestValidator : AbstractValidator<BookingRequestDto>
 
         RuleFor(x => x.End)
             .NotEmpty().WithMessage("End time is required");
-        
+
+        RuleFor(x => x.End).GreaterThan(x => x.Start)
+            .WithMessage("End time must be after Start time");
+
         RuleFor(x => x.FacilityId)
             .NotEmpty().WithMessage("FacilityId is required");
 

@@ -10,6 +10,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Threading.RateLimiting;
+using FluentValidation.AspNetCore;
+using Docplanner.Application.Validators;
+using FluentValidation;
 
 // Load .env file into environment
 DotEnv.Load();
@@ -45,6 +48,11 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddControllers();
+builder.Services.AddValidatorsFromAssemblyContaining<BookingRequestValidator>();
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -74,6 +82,8 @@ builder.Services.AddSwaggerDocument(config =>
     config.OperationProcessors.Add(
         new NSwag.Generation.Processors.Security.OperationSecurityScopeProcessor("JWT"));
 });
+
+builder.Services.AddMemoryCache();
 
 var rateLimitSection = builder.Configuration.GetSection("RateLimiting");
 int tokenLimit = rateLimitSection.GetValue<int>("TokenLimit");

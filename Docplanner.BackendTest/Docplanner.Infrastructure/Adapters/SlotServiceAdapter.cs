@@ -11,6 +11,11 @@ public class SlotServiceAdapter(HttpClient client, IOptions<SlotApiOptions> opti
 {
     private readonly SlotApiOptions _config = options.Value;
 
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     public async Task<DataResponseDto> FetchWeeklyAvailabilityAsync(string monday)
     {
         AddAuthHeader();
@@ -23,8 +28,7 @@ public class SlotServiceAdapter(HttpClient client, IOptions<SlotApiOptions> opti
 
 
         var json = await response.Content.ReadAsStringAsync();
-        var weeklyAvailability = JsonSerializer.Deserialize<WeeklyAvailabilityResponseDto>(json,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var weeklyAvailability = JsonSerializer.Deserialize<WeeklyAvailabilityResponseDto>(json, _jsonOptions);
 
         if (weeklyAvailability == null)
         {
@@ -54,7 +58,7 @@ public class SlotServiceAdapter(HttpClient client, IOptions<SlotApiOptions> opti
         WeeklyAvailabilityResponseDto? weeklyAvailability, string mondayString)
     {
         if (weeklyAvailability == null)
-            return Enumerable.Empty<AvailabilitySlotDto>();
+            return new List<AvailabilitySlotDto>();
 
         var availableSlots = new List<AvailabilitySlotDto>();
 
@@ -62,17 +66,26 @@ public class SlotServiceAdapter(HttpClient client, IOptions<SlotApiOptions> opti
         if (!DateTime.TryParseExact(mondayString, "yyyyMMdd",
             CultureInfo.InvariantCulture, DateTimeStyles.None, out var mondayDate))
         {
-            return Enumerable.Empty<AvailabilitySlotDto>();
+            return new List<AvailabilitySlotDto>();
         }
 
         // Procesamos cada día de la semana
-        ProcessDayAvailability(weeklyAvailability.Monday, mondayDate.AddDays(0), "Monday", availableSlots, weeklyAvailability.SlotDurationMinutes);
-        ProcessDayAvailability(weeklyAvailability.Tuesday, mondayDate.AddDays(1), "Tuesday", availableSlots, weeklyAvailability.SlotDurationMinutes);
-        ProcessDayAvailability(weeklyAvailability.Wednesday, mondayDate.AddDays(2), "Wednesday", availableSlots, weeklyAvailability.SlotDurationMinutes);
-        ProcessDayAvailability(weeklyAvailability.Thursday, mondayDate.AddDays(3), "Thursday", availableSlots, weeklyAvailability.SlotDurationMinutes);
-        ProcessDayAvailability(weeklyAvailability.Friday, mondayDate.AddDays(4), "Friday", availableSlots, weeklyAvailability.SlotDurationMinutes);
-        ProcessDayAvailability(weeklyAvailability.Saturday, mondayDate.AddDays(5), "Saturday", availableSlots, weeklyAvailability.SlotDurationMinutes);
-        ProcessDayAvailability(weeklyAvailability.Sunday, mondayDate.AddDays(6), "Sunday", availableSlots, weeklyAvailability.SlotDurationMinutes);
+        var weekDays = new (DayAvailabilityDto? Day, int Offset, string Name)[]
+        {
+            (weeklyAvailability.Monday, 0, "Monday"),
+            (weeklyAvailability.Tuesday, 1, "Tuesday"),
+            (weeklyAvailability.Wednesday, 2, "Wednesday"),
+            (weeklyAvailability.Thursday, 3, "Thursday"),
+            (weeklyAvailability.Friday, 4, "Friday"),
+            (weeklyAvailability.Saturday, 5, "Saturday"),
+            (weeklyAvailability.Sunday, 6, "Sunday"),
+        };
+
+        foreach (var (day, offset, name) in weekDays)
+        {
+            ProcessDayAvailability(day, mondayDate.AddDays(offset), name, availableSlots, weeklyAvailability.SlotDurationMinutes);
+        }
+
 
         return availableSlots;
     }
