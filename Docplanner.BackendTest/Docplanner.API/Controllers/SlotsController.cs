@@ -1,9 +1,11 @@
 using Docplanner.Common.DTOs;
 using Docplanner.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Docplanner.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class SlotsController : ControllerBase
