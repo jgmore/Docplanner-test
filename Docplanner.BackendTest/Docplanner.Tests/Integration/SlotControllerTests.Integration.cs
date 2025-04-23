@@ -4,6 +4,7 @@ using Docplanner.API.Controllers;
 using Docplanner.Application.Services;
 using Docplanner.Infrastructure.Adapters;
 using Docplanner.Common.DTOs;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Docplanner.Tests.Integration;
 public class SlotControllerTests_Integration
@@ -12,7 +13,8 @@ public class SlotControllerTests_Integration
 
     public SlotControllerTests_Integration()
     {
-        var service = new SlotService(new MockSlotServiceAdapter(), Microsoft.Extensions.Logging.Abstractions.NullLogger<SlotService>.Instance);
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var service = new SlotService(new MockSlotServiceAdapter(), Microsoft.Extensions.Logging.Abstractions.NullLogger<SlotService>.Instance, memoryCache);
         _controller = new SlotsController(service);
     }
 

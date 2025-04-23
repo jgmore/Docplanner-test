@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using System.Globalization;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Docplanner.Tests.Unit;
 
@@ -12,9 +13,10 @@ public class SlotServiceTests
 {
     private readonly Mock<ISlotServiceAdapter> _adapterMock = new();
     private readonly Mock<ILogger<SlotService>> _loggerMock = new();
+    private readonly IMemoryCache _memoryCache = new MemoryCache(new MemoryCacheOptions());
 
     private SlotService CreateService() =>
-        new(_adapterMock.Object, _loggerMock.Object);
+        new(_adapterMock.Object, _loggerMock.Object, _memoryCache);
 
     [Fact]
     public async Task GetWeeklyAvailability_ShouldReturnSlots()

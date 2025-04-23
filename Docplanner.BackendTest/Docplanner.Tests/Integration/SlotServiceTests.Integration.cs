@@ -2,6 +2,7 @@ using Xunit;
 using Docplanner.Application.Services;
 using Docplanner.Infrastructure.Adapters;
 using Docplanner.Common.DTOs;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Docplanner.Tests.Integration;
 
@@ -11,8 +12,9 @@ public class SlotServiceTests_Integration
 
     public SlotServiceTests_Integration()
     {
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
         var adapter = new MockSlotServiceAdapter();
-        _service = new SlotService(adapter, Microsoft.Extensions.Logging.Abstractions.NullLogger<SlotService>.Instance);
+        _service = new SlotService(adapter, Microsoft.Extensions.Logging.Abstractions.NullLogger<SlotService>.Instance, memoryCache);
     }
 
     [Fact]

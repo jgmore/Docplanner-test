@@ -4,22 +4,46 @@ using Docplanner.Common.Converters;
 using System.Text.Json;
 using Docplanner.Common.DTOs;
 using Xunit;
+using System.Net.Http.Headers;
+using Microsoft.Extensions.Configuration;
+using dotenv.net;
 
 namespace Docplanner.Tests.Integration;
 
 public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client;
+    private readonly IConfiguration _configuration;
 
     public SlotControllerIntegrationTests(TestWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
+        var envPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".env");
+        DotEnv.Load(options: new DotEnvOptions(envFilePaths: new[] { envPath }));
     }
+
+    private async Task<string> GetJwtTokenAsync()
+    {
+        LoginDto loginDto = new LoginDto();
+        loginDto.Username = Environment.GetEnvironmentVariable("SlotApi__Username");
+        loginDto.Password = Environment.GetEnvironmentVariable("SlotApi__Password");
+
+        var response = await _client.PostAsJsonAsync("/api/Auth/login", loginDto);
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+        return doc.RootElement.GetProperty("token").GetString()!;
+    }
+
 
     [Fact]
     public async Task GetWeeklyAvailability_ReturnsSuccess()
     {
         // Act
+        var token = await GetJwtTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
         var response = await _client.GetAsync("/api/slots/week/20250415");
 
         // Configura manualmente las opciones de serialización para los tests
@@ -65,6 +89,8 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
         };
 
         // Act
+        var token = await GetJwtTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var response = await _client.PostAsJsonAsync("/api/slots/book", request);
 
         // Assert
@@ -92,6 +118,8 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
         };
 
         // Act
+        var token = await GetJwtTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var response = await _client.PostAsJsonAsync("/api/slots/book", request);
         var content = await response.Content.ReadFromJsonAsync<ApiResponseDto<bool>>();
 
