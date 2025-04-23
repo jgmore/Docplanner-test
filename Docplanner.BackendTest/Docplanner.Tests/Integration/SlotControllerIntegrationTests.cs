@@ -13,7 +13,6 @@ namespace Docplanner.Tests.Integration;
 public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client;
-    private readonly IConfiguration _configuration;
 
     public SlotControllerIntegrationTests(TestWebApplicationFactory factory)
     {
@@ -92,6 +91,11 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
         var token = await GetJwtTokenAsync();
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var response = await _client.PostAsJsonAsync("/api/slots/book", request);
+        if (response.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            Task.Delay(10000);
+            response = await _client.PostAsJsonAsync("/api/slots/book", request);
+        }
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
