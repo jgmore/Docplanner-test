@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Docplanner.Tests.Unit;
 
-public class SlotServiceAdapter_UnitTests
+public class SlotServiceAdapterTests
 {
     private static HttpClient CreateMockHttpClient(HttpResponseMessage response)
     {

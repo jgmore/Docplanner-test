@@ -1,6 +1,8 @@
 ﻿using Xunit;
 using dotenv.net;
 using System.Net.Http.Json;
+using System.Net;
+using System.Text;
 
 namespace Docplanner.Tests.Integration;
 
@@ -35,5 +37,23 @@ public class AuthControllerIntegrationTests : IClassFixture<TestWebApplicationFa
     {
         var response = await _client.GetAsync("/api/slots/week/20250421");
         Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("GET", "/api/Auth/login")]
+    [InlineData("PUT", "/api/Auth/login")]
+    [InlineData("DELETE", "/api/Auth/login")]
+    [InlineData("PATCH", "/api/Auth/login")]
+    public async Task BookEndpoint_ShouldReturn_405_ForUnsupportedVerbs(string method, string url)
+    {
+        // Act
+        var request = new HttpRequestMessage(new HttpMethod(method), url)
+        {
+            Content = new StringContent("{}", Encoding.UTF8, "application/json")
+        };
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
     }
 }

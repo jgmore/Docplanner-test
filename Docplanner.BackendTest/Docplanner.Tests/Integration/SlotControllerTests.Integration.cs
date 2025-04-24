@@ -7,6 +7,7 @@ using Xunit;
 using System.Net.Http.Headers;
 using dotenv.net;
 using Microsoft.AspNetCore.Mvc;
+using System.Text;
 
 namespace Docplanner.Tests.Integration;
 
@@ -43,7 +44,7 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
         var token = await GetJwtTokenAsync();
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var response = await _client.GetAsync("/api/slots/week/20250415");
+        var response = await _client.GetAsync("/api/slots/week/20250421");
 
         // Configura manualmente las opciones de serialización para los tests
         var options = new JsonSerializerOptions
@@ -91,11 +92,6 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
         var token = await GetJwtTokenAsync();
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var response = await _client.PostAsJsonAsync("/api/slots/book", request);
-        /*if (response.StatusCode == HttpStatusCode.TooManyRequests)
-        {
-            await Task.Delay(TimeSpan.FromSeconds(10));
-            response = await _client.PostAsJsonAsync("/api/slots/book", request);
-        }*/
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -140,7 +136,7 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
         var token = await GetJwtTokenAsync();
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var responseGet = await _client.GetAsync("/api/slots/week/20250415");
+        var responseGet = await _client.GetAsync("/api/slots/week/20250421");
 
         var options = new JsonSerializerOptions
         {
@@ -179,5 +175,38 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
         Assert.NotNull(contentPost);
         Assert.True(contentPost!.Success);
         Assert.True(contentPost.Data);
+    }
+
+    [Theory]
+    [InlineData("POST", "/api/slots/week/20250421")]
+    [InlineData("PUT", "/api/slots/week/20250421")]
+    [InlineData("DELETE", "/api/slots/week/20250421")]
+    [InlineData("PATCH", "/api/slots/week/20250421")]
+    public async Task WeekEndpoint_ShouldReturn_405_ForUnsupportedVerbs(string method, string url)
+    {
+        // Act
+        var request = new HttpRequestMessage(new HttpMethod(method), url);
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("GET", "/api/slots/book")]
+    [InlineData("PUT", "/api/slots/book")]
+    [InlineData("DELETE", "/api/slots/book")]
+    [InlineData("PATCH", "/api/slots/book")]
+    public async Task BookEndpoint_ShouldReturn_405_ForUnsupportedVerbs(string method, string url)
+    {
+        // Act
+        var request = new HttpRequestMessage(new HttpMethod(method), url)
+        {
+            Content = new StringContent("{}", Encoding.UTF8, "application/json")
+        };
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
     }
 }

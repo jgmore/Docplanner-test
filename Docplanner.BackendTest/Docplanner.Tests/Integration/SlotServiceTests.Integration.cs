@@ -6,11 +6,11 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace Docplanner.Tests.Integration;
 
-public class SlotServiceTests_Integration
+public class SlotServiceIntegrationTests
 {
     private readonly SlotService _service;
 
-    public SlotServiceTests_Integration()
+    public SlotServiceIntegrationTests()
     {
         var memoryCache = new MemoryCache(new MemoryCacheOptions());
         var adapter = new MockSlotServiceAdapter();
