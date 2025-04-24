@@ -13,12 +13,26 @@ using System.Threading.RateLimiting;
 using FluentValidation.AspNetCore;
 using Docplanner.Application.Validators;
 using FluentValidation;
+using Docplanner.Common.DTOs;
 
 // Load .env file into environment
 DotEnv.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
+var rawUsers = Environment.GetEnvironmentVariable("AUTH_USERS");
+var userCredentials = rawUsers?
+    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+    .Select(entry => entry.Split(':'))
+    .Where(parts => parts.Length == 2)
+    .Select(parts => new UserCredentialDto
+    {
+        Username = parts[0].Trim(),
+        Password = PasswordHasher.Hash(parts[1].Trim())
+    })
+    .ToList() ?? new List<UserCredentialDto>();
+
+builder.Services.AddSingleton(userCredentials);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

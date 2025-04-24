@@ -1,8 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
+﻿using Docplanner.Common.DTOs;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Docplanner.API.Controllers
 {
@@ -10,20 +7,27 @@ namespace Docplanner.API.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
+        private readonly List<UserCredentialDto> _userCredentials;
         private readonly ITokenService _tokenService;
         private readonly IConfiguration _config;
 
-        public AuthController(ITokenService tokenService, IConfiguration config)
+        public AuthController(ITokenService tokenService, IConfiguration config, List<UserCredentialDto> userCredentials)
         {
             _tokenService = tokenService;
             _config = config;
+            _userCredentials = userCredentials;
         }
 
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginDto login)
         {
-            if (login.Username != _config["SlotApi:Username"] || login.Password != _config["SlotApi:Password"])
-                return Unauthorized();
+            var hashedInput = PasswordHasher.Hash(login.Password);
+            var match = _userCredentials.FirstOrDefault(u => u.Username == login.Username && u.Password == hashedInput);
+
+            if (match == null)
+            {
+                return Unauthorized(new { Message = "Invalid credentials" });
+            }
 
             var token = _tokenService.GenerateToken(login.Username);
             return Ok(new { Token = token });

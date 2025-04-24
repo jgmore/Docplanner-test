@@ -24,9 +24,21 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
 
     private async Task<string> GetJwtTokenAsync()
     {
+        var rawUsers = Environment.GetEnvironmentVariable("AUTH_USERS");
+        var firstUserCredential = rawUsers?
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(entry => entry.Split(':'))
+            .Where(parts => parts.Length == 2)
+            .Select(parts => new UserCredentialDto
+            {
+                Username = parts[0].Trim(),
+                Password = parts[1].Trim()
+            })
+            .FirstOrDefault();
+
         LoginDto loginDto = new LoginDto();
-        loginDto.Username = Environment.GetEnvironmentVariable("SlotApi__Username");
-        loginDto.Password = Environment.GetEnvironmentVariable("SlotApi__Password");
+        loginDto.Username = firstUserCredential.Username;
+        loginDto.Password = firstUserCredential.Password;
 
         var response = await _client.PostAsJsonAsync("/api/Auth/login", loginDto);
         response.EnsureSuccessStatusCode();
