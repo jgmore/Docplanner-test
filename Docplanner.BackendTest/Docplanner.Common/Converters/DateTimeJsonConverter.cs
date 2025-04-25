@@ -23,8 +23,14 @@ public class DateTimeJsonConverter : JsonConverter<DateTime>
             return result;
         }
 
-        // Si falla, intentar con parse estándar
-        return DateTime.Parse(dateString);
+        try
+        {
+            return DateTime.Parse(dateString!);
+        }
+        catch (FormatException ex)
+        {
+            throw new JsonException($"Unable to parse '{dateString}' as a DateTime.", ex);
+        }
     }
 
     public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)

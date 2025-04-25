@@ -114,10 +114,64 @@ public class SlotServiceTests
             Times.AtLeastOnce);
     }
 
+    [Fact]
+    public async Task GetWeeklyAvailabilityAsync_UsesCache_WhenAvailable()
+    {
+        var monday = "20250415";
+        var cachedData = new DataResponseDto
+        {
+            FacilityId = "CachedFacility",
+            AvailableSlots = new[]
+            {
+            new AvailabilitySlotDto
+            {
+                Start = new DateTime(2025, 4, 15, 9, 0, 0),
+                End = new DateTime(2025, 4, 15, 9, 20, 0),
+                DayOfWeek = "Monday",
+                IsAvailable = true
+            }
+        }
+        };
 
+        // Set cache manually
+        _memoryCache.Set($"weekly_availability_{monday}", cachedData);
+
+        var service = CreateService();
+
+        // Act
+        var result = await service.GetWeeklyAvailabilityAsync(monday);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Single(result.Data);
+        Assert.Equal("CachedFacility", result.FacilityId);
+    }
 
     [Fact]
-    public async Task BookSlot_ShouldReturnSuccess_WhenBookingSucceeds()
+    public async Task GetWeeklyAvailabilityAsync_HandlesNullSlots()
+    {
+        var dataResponse = new DataResponseDto
+        {
+            AvailableSlots = null,
+            FacilityId = "Id1"
+        };
+
+        _adapterMock.Setup(a => a.FetchWeeklyAvailabilityAsync("20250415"))
+                    .ReturnsAsync(dataResponse);
+
+        var service = CreateService();
+
+        var result = await service.GetWeeklyAvailabilityAsync("20250415");
+
+        Assert.NotNull(result);
+        Assert.Null(result.Data); // If null is returned, this test makes sure it's handled gracefully
+    }
+
+
+    [Theory]
+    [InlineData("2025-04-15 10:00:00", "2025-04-15 10:20:00")]
+    [InlineData("2025-04-20 10:00:00", "2025-04-20 10:20:00")]
+    public async Task BookSlot_ShouldReturnSuccess_WhenBookingSucceeds(string start, string end)
     {
         _adapterMock.Setup(a => a.TakeSlotAsync(It.IsAny<BookingRequestDto>()))
             .ReturnsAsync(ApiResponseDto<bool>.CreateSuccess("Id1", true, "Booked successfully"));
@@ -126,8 +180,8 @@ public class SlotServiceTests
 
         var bookingRequest = new BookingRequestDto
         {
-            Start = "2025-04-15 10:00:00",
-            End = "2025-04-15 10:20:00",
+            Start = start,
+            End = end,
             Comments = "Test booking",
             Patient = new PatientDto
             {
@@ -177,4 +231,100 @@ public class SlotServiceTests
         Assert.Equal("Invalid patient information", result.Message);
         Assert.Contains("Patient details are incomplete", result.Errors);
     }
+
+    [Fact]
+    public async Task BookSlotAsync_RemovesCache_AfterSuccessfulBooking()
+    {
+        var monday = "20250414"; // 2025-04-15 falls in week starting 2025-04-14
+        var cacheKey = $"weekly_availability_{monday}";
+
+        _memoryCache.Set(cacheKey, new object()); // Dummy cache to be removed
+
+        _adapterMock.Setup(a => a.TakeSlotAsync(It.IsAny<BookingRequestDto>()))
+            .ReturnsAsync(ApiResponseDto<bool>.CreateSuccess("Id1", true, "Success"));
+
+        var service = CreateService();
+
+        var bookingRequest = new BookingRequestDto
+        {
+            Start = "2025-04-15 10:00:00",
+            End = "2025-04-15 10:20:00",
+            Patient = new PatientDto { Email = "a@b.com", Name = "X", Phone = "0000" }
+        };
+
+        // Act
+        await service.BookSlotAsync(bookingRequest);
+
+        // Assert
+        Assert.False(_memoryCache.TryGetValue(cacheKey, out _)); // Should be removed
+    }
+
+    [Fact]
+    public async Task BookSlotAsync_ReturnsError_WhenExceptionThrown()
+    {
+        _adapterMock.Setup(a => a.TakeSlotAsync(It.IsAny<BookingRequestDto>()))
+            .ThrowsAsync(new Exception("Booking failure"));
+
+        var service = CreateService();
+
+        var bookingRequest = new BookingRequestDto
+        {
+            Start = "2025-04-15 10:00:00",
+            End = "2025-04-15 10:20:00",
+            Patient = new PatientDto { Email = "a@b.com", Name = "X", Phone = "0000" }
+        };
+
+        // Act
+        var result = await service.BookSlotAsync(bookingRequest);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Contains("Booking failure", result.Errors.FirstOrDefault());
+
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Error booking slot")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task BookSlotAsync_ReturnsError_WhenStartDateIsInvalid()
+    {
+        _adapterMock.Setup(a => a.TakeSlotAsync(It.IsAny<BookingRequestDto>()))
+            .ReturnsAsync(ApiResponseDto<bool>.CreateSuccess("Id1", true, "Booked"));
+
+        var service = CreateService();
+
+        var bookingRequest = new BookingRequestDto
+        {
+            Start = "not a valid date",
+            End = "2025-04-15 10:20:00",
+            Patient = new PatientDto
+            {
+                Email = "test@example.com",
+                Name = "Test",
+                Phone = "123456789"
+            }
+        };
+
+        var result = await service.BookSlotAsync(bookingRequest);
+
+        Assert.False(result.Success);
+        Assert.Equal("Error processing booking", result.Message);
+        Assert.Contains("not a valid date", result.Errors.FirstOrDefault() ?? "");
+
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Error booking slot")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
 }

@@ -90,7 +90,7 @@ public class SlotServiceAdapter(HttpClient client, IOptions<SlotApiOptions> opti
         return availableSlots;
     }
 
-    private void ProcessDayAvailability(
+    internal void ProcessDayAvailability(
         DayAvailabilityDto? dayAvailability,
         DateTime date,
         string dayName,

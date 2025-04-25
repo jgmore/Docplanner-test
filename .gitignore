@@ -43,6 +43,8 @@ CodeCoverage/
 .vs
 .env
 .gitignore.bak
+coveragereport
+TestResults
 
 # MSBuild Binary and Structured Log
 *.binlog
