@@ -480,6 +480,36 @@ public class SlotServiceAdapterTests
     }
 
     [Fact]
+    public async Task TakeSlotAsync_ReturnsError_When_HttpStatusCodeIsFailure()
+    {
+        // Arrange
+        var response = new HttpResponseMessage(HttpStatusCode.BadRequest)
+        {
+            Content = new StringContent("Bad Request", Encoding.UTF8, "application/json")
+        };
+
+        var adapter = CreateAdapter(response);
+
+        var bookingRequest = new BookingRequestDto
+        {
+            FacilityId = "F001",
+            Start = "20250422T090000",
+            End = "20250422T093000",
+            Comments = "Routine Checkup",
+            Patient = new PatientDto { Name = "John Doe" }
+        };
+
+        // Act
+        var result = await adapter.TakeSlotAsync(bookingRequest);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Contains("External Slot Service TakeSlotAsync error:", result.Errors.First()); // assuming error contains this text
+        Assert.False(result.Data);
+    }
+
+
+    [Fact]
     public void ConvertToAvailableSlots_ReturnsEmpty_When_WeeklyAvailabilityIsNull()
     {
         // Arrange

@@ -44,15 +44,19 @@ public class MockSlotServiceAdapterTests
     }
 
     [Theory]
-    [InlineData("2025-04-21")]
-    [InlineData("21-04-2025")]
-    [InlineData("")]
-    [InlineData(null)]
-    public async Task FetchWeeklyAvailabilityAsync_InvalidDate_ThrowsArgumentException(string invalidDate)
+    [InlineData("2025-04-21")] // Wrong format (yyyy-MM-dd)
+    [InlineData("21-04-2025")] // Wrong format (dd-MM-yyyy)
+    [InlineData("")]           // Empty string
+    [InlineData(null)]         // Null
+    [InlineData("20250432")]    // Invalid day (April 32nd)
+    [InlineData("   ")]         // Whitespace
+    public async Task FetchWeeklyAvailabilityAsync_InvalidDates_ThrowsArgumentException(string invalidDate)
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => _adapter.FetchWeeklyAvailabilityAsync(invalidDate));
     }
+
+
 
     [Fact]
     public async Task TakeSlotAsync_NullRequest_ThrowsArgumentNullException()
@@ -156,4 +160,25 @@ public class MockSlotServiceAdapterTests
         Assert.True(result.Data);
         Assert.Equal("Mock booking confirmed", result.Message);
     }
+
+    [Fact]
+    public async Task TakeSlotAsync_MissingAllFields_ReturnsError()
+    {
+        // Arrange
+        var request = new BookingRequestDto
+        {
+            Start = null,
+            End = null,
+            Patient = null
+        };
+
+        // Act
+        var result = await _adapter.TakeSlotAsync(request);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal("Invalid slot times", result.Message); // Since it first checks Start/End
+        Assert.Contains("Start and End times are required", result.Errors);
+    }
+
 }

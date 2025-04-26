@@ -83,5 +83,50 @@ public class AuthControllerTests
         Assert.Equal(401, unauthorizedResult.StatusCode);
     }
 
+    [Fact]
+    public void Login_WithEmptyUsernameOrPassword_ReturnsUnauthorized()
+    {
+        // Arrange
+        var credentials = new List<UserCredentialDto>
+    {
+        new UserCredentialDto { Username = "user1", Password = PasswordHasher.Hash("pass1") }
+    };
+
+        var controller = new AuthController(_tokenServiceMock.Object, _configMock.Object, credentials);
+
+        // Act & Assert for empty username
+        var resultEmptyUsername = controller.Login(new LoginDto { Username = "", Password = "pass1" });
+        Assert.IsType<UnauthorizedObjectResult>(resultEmptyUsername);
+
+        // Act & Assert for empty password
+        var resultEmptyPassword = controller.Login(new LoginDto { Username = "user1", Password = "" });
+        Assert.IsType<UnauthorizedObjectResult>(resultEmptyPassword);
+
+        // Act & Assert for null username
+        var resultNullUsername = controller.Login(new LoginDto { Username = null!, Password = "pass1" });
+        Assert.IsType<UnauthorizedObjectResult>(resultNullUsername);
+
+        // Act & Assert for null password
+        var resultNullPassword = controller.Login(new LoginDto { Username = "user1", Password = null! });
+        Assert.IsType<UnauthorizedObjectResult>(resultNullPassword);
+    }
+
+    [Fact]
+    public void Login_WithNoUsersConfigured_ReturnsUnauthorized()
+    {
+        // Arrange
+        var emptyCredentials = new List<UserCredentialDto>(); // no users
+        var controller = new AuthController(_tokenServiceMock.Object, _configMock.Object, emptyCredentials);
+
+        var loginDto = new LoginDto { Username = "user1", Password = "pass1" };
+
+        // Act
+        var result = controller.Login(loginDto);
+
+        // Assert
+        var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result);
+        Assert.Equal(401, unauthorizedResult.StatusCode);
+    }
+
 }
 

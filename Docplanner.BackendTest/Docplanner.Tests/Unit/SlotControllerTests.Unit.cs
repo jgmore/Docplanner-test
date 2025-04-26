@@ -66,33 +66,17 @@ public class SlotControllerTests
     }
 
 
-    [Fact]
-    public async Task GetWeeklyAvailability_ReturnsBadRequest_OnFailure()
-    {
-        var response = ApiResponseDto<IEnumerable<AvailabilitySlotDto>>.CreateError(
-                "Unexpected error"
-            );
-        _serviceMock.Setup(s => s.GetWeeklyAvailabilityAsync("20250415"))
-            .ReturnsAsync(response);
-
-        var controller = CreateController();
-        var result = await controller.GetWeeklyAvailability("20250415");
-
-        var objectResult = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(500, objectResult.StatusCode);
-        var value = Assert.IsType<ApiResponseDto<IEnumerable<AvailabilitySlotDto>>>(objectResult.Value);
-        Assert.False(value.Success);
-    }
-
-    [Fact]
-    public async Task GetWeeklyAvailability_ReturnsInternalServerError_WhenServiceFails()
+    [Theory]
+    [InlineData("Unexpected error", new string[] { })]
+    [InlineData("Internal error occurred", new string[] { "Database timeout", "Unexpected null value" })]
+    public async Task GetWeeklyAvailability_ReturnsInternalServerError_WhenServiceFails(string message, string[] errors)
     {
         // Arrange
         var monday = "20250422";
 
         var serviceResponse = ApiResponseDto<IEnumerable<AvailabilitySlotDto>>.CreateError(
-            message: "Internal error occurred",
-            errors: new[] { "Database timeout", "Unexpected null value" }
+            message: message,
+            errors: errors.Length > 0 ? errors : null
         );
 
         _serviceMock.Setup(s => s.GetWeeklyAvailabilityAsync(monday))
@@ -108,11 +92,17 @@ public class SlotControllerTests
         Assert.Equal(500, objectResult.StatusCode);
         var response = Assert.IsType<ApiResponseDto<IEnumerable<AvailabilitySlotDto>>>(objectResult.Value);
         Assert.False(response.Success);
-        Assert.Equal("Internal error occurred", response.Message);
-        Assert.NotNull(response.Errors);
-        Assert.Contains("Database timeout", response.Errors!);
-    }
+        Assert.Equal(message, response.Message);
 
+        if (errors.Length > 0)
+        {
+            Assert.NotNull(response.Errors);
+            foreach (var error in errors)
+            {
+                Assert.Contains(error, response.Errors!);
+            }
+        }
+    }
 
     [Fact]
     public async Task BookSlot_ReturnsOk_OnSuccess()
@@ -148,20 +138,28 @@ public class SlotControllerTests
         Assert.False(value.Success);
     }
 
-    private void ValidateModel(object model, SlotsController controller)
+    private void ValidateModel(object model, ControllerBase controller)
     {
-        var validationContext = new ValidationContext(model, null, null);
+        var validationContext = new ValidationContext(model);
         var validationResults = new List<ValidationResult>();
-        Validator.TryValidateObject(model, validationContext, validationResults, true);
+        bool isValid = Validator.TryValidateObject(model, validationContext, validationResults, validateAllProperties: true);
 
-        foreach (var validationResult in validationResults)
+        if (!isValid)
         {
-            foreach (var memberName in validationResult.MemberNames)
+            foreach (var validationResult in validationResults)
             {
-                controller.ModelState.AddModelError(memberName, validationResult.ErrorMessage);
+                var memberNames = validationResult.MemberNames.Any()
+                    ? validationResult.MemberNames
+                    : new[] { string.Empty }; // fallback for general model errors
+
+                foreach (var memberName in memberNames)
+                {
+                    controller.ModelState.AddModelError(memberName, validationResult.ErrorMessage);
+                }
             }
         }
     }
+
 
     [Fact]
     public async Task BookSlot_ReturnsBadRequest_WhenModelStateIsInvalid()
@@ -197,8 +195,10 @@ public class SlotControllerTests
         _serviceMock.Verify(s => s.BookSlotAsync(It.IsAny<BookingRequestDto>()), Times.Never);
     }
 
-    [Fact]
-    public async Task BookSlot_ReturnsBadRequest_WhenServiceFails()
+    [Theory]
+    [InlineData("Validation failed", new string[] { "Start time is invalid", "Patient email format is wrong" })]
+    [InlineData("Booking failed", new string[] { "Slot already booked" })]
+    public async Task BookSlot_ReturnsBadRequest_WhenServiceFails(string message, string[] errors)
     {
         // Arrange
         var controller = CreateController();
@@ -219,8 +219,8 @@ public class SlotControllerTests
         };
 
         var serviceResponse = ApiResponseDto<bool>.CreateError(
-            message: "Validation failed",
-            errors: new[] { "Start time is invalid", "Patient email format is wrong" }
+            message: message,
+            errors: errors
         );
 
         _serviceMock.Setup(s => s.BookSlotAsync(request))
@@ -233,10 +233,13 @@ public class SlotControllerTests
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
         var response = Assert.IsType<ApiResponseDto<bool>>(badRequest.Value);
         Assert.False(response.Success);
-        Assert.Equal("Validation failed", response.Message);
+        Assert.Equal(message, response.Message);
         Assert.NotNull(response.Errors);
-        Assert.Contains("Start time is invalid", response.Errors!);
-    }
 
+        foreach (var error in errors)
+        {
+            Assert.Contains(error, response.Errors!);
+        }
+    }
 
 }

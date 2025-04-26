@@ -21,6 +21,11 @@ namespace Docplanner.API.Controllers
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginDto login)
         {
+            if (string.IsNullOrWhiteSpace(login.Username) || string.IsNullOrWhiteSpace(login.Password))
+            {
+                return Unauthorized(new { Message = "Invalid credentials" });
+            }
+
             var hashedInput = PasswordHasher.Hash(login.Password);
             var match = _userCredentials.FirstOrDefault(u => u.Username == login.Username && u.Password == hashedInput);
 
