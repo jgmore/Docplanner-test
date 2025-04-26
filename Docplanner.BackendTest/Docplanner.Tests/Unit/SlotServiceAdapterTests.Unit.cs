@@ -74,7 +74,7 @@ public class SlotServiceAdapterTests
 
         var adapter = CreateAdapter(response);
         var ex = await Assert.ThrowsAsync<ApplicationException>(() => adapter.FetchWeeklyAvailabilityAsync("20250422"));
-        Assert.Contains("Slot Service error", ex.Message);
+        Assert.Contains("External Slot Service GetWeeklyAvailability error", ex.Message);
     }
 
     [Fact]

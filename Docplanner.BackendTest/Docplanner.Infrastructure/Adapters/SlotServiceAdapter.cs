@@ -23,7 +23,7 @@ public class SlotServiceAdapter(HttpClient client, IOptions<SlotApiOptions> opti
         if (!response.IsSuccessStatusCode)
         {
             var error = await response.Content.ReadAsStringAsync();
-            throw new ApplicationException($"Slot Service error: {(int)response.StatusCode} - {error}");
+            throw new ApplicationException($"External Slot Service GetWeeklyAvailability error: {(int)response.StatusCode} - {error}");
         }
 
 
@@ -174,6 +174,11 @@ public class SlotServiceAdapter(HttpClient client, IOptions<SlotApiOptions> opti
         {
             var response = await client.PostAsync($"{_config.BaseUrl}/TakeSlot", content);
             var body = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = body;
+                throw new ApplicationException($"External Slot Service TakeSlotAsync error: {(int)response.StatusCode} - {error}");
+            }
 
             return new ApiResponseDto<bool>
             {
