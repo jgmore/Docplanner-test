@@ -16,6 +16,12 @@ public class BookingRequestValidator : AbstractValidator<BookingRequestDto>
         RuleFor(x => x.End).GreaterThan(x => x.Start)
             .WithMessage("End time must be after Start time");
 
+        RuleFor(x => x.Start)
+            .Must(BeValidDate).WithMessage("Start must be a valid datetime in format yyyy-MM-dd HH:mm:ss");
+
+        RuleFor(x => x.End)
+            .Must(BeValidDate).WithMessage("End must be a valid datetime in format yyyy-MM-dd HH:mm:ss");
+
         RuleFor(x => x.FacilityId)
             .NotEmpty().WithMessage("FacilityId is required");
 
@@ -36,4 +42,10 @@ public class BookingRequestValidator : AbstractValidator<BookingRequestDto>
                 .NotEmpty().WithMessage("Phone number is required");
         });
     }
+
+    private bool BeValidDate(string date)
+    {
+        return DateTime.TryParseExact(date, "yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out _);
+    }
+
 }

@@ -131,6 +131,8 @@ builder.Services.AddRateLimiter(options =>
 
 builder.Services.Configure<SlotApiOptions>(builder.Configuration.GetSection("SlotApi"));
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+builder.Services.Configure<RetryPolicyOptions>(builder.Configuration.GetSection("RetryPolicyOptions"));
+
 
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)

@@ -3,6 +3,8 @@ using Docplanner.Application.Services;
 using Docplanner.Infrastructure.Adapters;
 using Docplanner.Common.DTOs;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
+using Moq;
 
 namespace Docplanner.Tests.Integration;
 
@@ -14,13 +16,19 @@ public class SlotServiceIntegrationTests
     {
         var memoryCache = new MemoryCache(new MemoryCacheOptions());
         var adapter = new MockSlotServiceAdapter();
-        _service = new SlotService(adapter, Microsoft.Extensions.Logging.Abstractions.NullLogger<SlotService>.Instance, memoryCache);
+        var mockRetryOptions = new Mock<IOptions<RetryPolicyOptions>>();
+        mockRetryOptions.Setup(x => x.Value).Returns(new RetryPolicyOptions
+        {
+            RetryCount = 3,
+            InitialDelaySeconds = 2
+        });
+        _service = new SlotService(adapter, Microsoft.Extensions.Logging.Abstractions.NullLogger<SlotService>.Instance, memoryCache,mockRetryOptions.Object);
     }
 
     [Fact]
     public async Task CanFetchAndBookSlot()
     {
-        var response = await _service.GetWeeklyAvailabilityAsync("20250415");
+        var response = await _service.GetWeeklyAvailabilityAsync("20250421");
         Assert.NotEmpty(response.Data);
 
         AvailabilitySlotDto[] slots = response.Data.ToArray();
