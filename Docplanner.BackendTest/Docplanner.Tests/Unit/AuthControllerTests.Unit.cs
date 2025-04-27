@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Docplanner.Tests.Unit;
 
+[Trait("Category", "Unit")]
 public class AuthControllerTests
 {
     private readonly Mock<ITokenService> _tokenServiceMock;
@@ -83,32 +84,23 @@ public class AuthControllerTests
         Assert.Equal(401, unauthorizedResult.StatusCode);
     }
 
-    [Fact]
-    public void Login_WithEmptyUsernameOrPassword_ReturnsUnauthorized()
+    [Theory]
+    [InlineData("", "pass1")] // Empty username
+    [InlineData("user1", "")] // Empty password
+    [InlineData(null!, "pass1")] // null username
+    [InlineData("user1", null!)] // null password
+    public void Login_WithEmptyUsernameOrPassword_ReturnsUnauthorized(string username, string password)
     {
         // Arrange
         var credentials = new List<UserCredentialDto>
-    {
-        new UserCredentialDto { Username = "user1", Password = PasswordHasher.Hash("pass1") }
-    };
-
-        var controller = new AuthController(_tokenServiceMock.Object, _configMock.Object, credentials);
-
-        // Act & Assert for empty username
-        var resultEmptyUsername = controller.Login(new LoginDto { Username = "", Password = "pass1" });
-        Assert.IsType<UnauthorizedObjectResult>(resultEmptyUsername);
-
-        // Act & Assert for empty password
-        var resultEmptyPassword = controller.Login(new LoginDto { Username = "user1", Password = "" });
-        Assert.IsType<UnauthorizedObjectResult>(resultEmptyPassword);
-
-        // Act & Assert for null username
-        var resultNullUsername = controller.Login(new LoginDto { Username = null!, Password = "pass1" });
-        Assert.IsType<UnauthorizedObjectResult>(resultNullUsername);
-
-        // Act & Assert for null password
-        var resultNullPassword = controller.Login(new LoginDto { Username = "user1", Password = null! });
-        Assert.IsType<UnauthorizedObjectResult>(resultNullPassword);
+        {
+            new UserCredentialDto { Username = "user1", Password = PasswordHasher.Hash("pass1") }
+        };
+        // Act
+        var controller = new AuthController(_tokenServiceMock.Object, _configMock.Object, credentials);        
+        var result = controller.Login(new LoginDto { Username = "", Password = "pass1" });
+        // Assert
+        Assert.IsType<UnauthorizedObjectResult>(result);
     }
 
     [Fact]

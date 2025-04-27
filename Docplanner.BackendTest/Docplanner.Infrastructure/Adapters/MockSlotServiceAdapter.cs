@@ -50,7 +50,6 @@ public class MockSlotServiceAdapter : ISlotServiceAdapter
             throw new ArgumentNullException(nameof(request), "Booking request cannot be null");
         }
 
-        // Validación del nuevo formato de BookingRequestDto
         if (string.IsNullOrEmpty(request.Start) || string.IsNullOrEmpty(request.End))
         {
             return ApiResponseDto<bool>.CreateError(
@@ -67,7 +66,7 @@ public class MockSlotServiceAdapter : ISlotServiceAdapter
             );
         }
 
-        // Validación específica de los datos del paciente
+        // Validation of Patient data
         if (string.IsNullOrEmpty(request.Patient.Email) ||
             string.IsNullOrEmpty(request.Patient.Name) ||
             string.IsNullOrEmpty(request.Patient.SecondName))

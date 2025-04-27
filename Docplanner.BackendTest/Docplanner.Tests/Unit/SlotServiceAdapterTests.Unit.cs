@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Docplanner.Tests.Unit;
 
+[Trait("Category", "Unit")]
 public class SlotServiceAdapterTests
 {
     private static HttpClient CreateMockHttpClient(HttpResponseMessage response)
@@ -504,7 +505,7 @@ public class SlotServiceAdapterTests
 
         // Assert
         Assert.False(result.Success);
-        Assert.Contains("External Slot Service TakeSlotAsync error:", result.Errors.First()); // assuming error contains this text
+        Assert.Contains("External Slot Service TakeSlotAsync error:", result.Errors.First());
         Assert.False(result.Data);
     }
 
@@ -576,7 +577,7 @@ public class SlotServiceAdapterTests
     public void ProcessDayAvailability_BusySlotsIsNull_GeneratesExpectedSlots()
     {
         // Arrange
-        var client = new HttpClient(); // You can mock it, not important here
+        var client = new HttpClient();
         var options = Options.Create(new SlotApiOptions());
         var adapter = new SlotServiceAdapter(client, options);
 
@@ -592,7 +593,7 @@ public class SlotServiceAdapterTests
         var dayAvailability = new DayAvailabilityDto
         {
             WorkPeriod = workPeriod,
-            BusySlots = null // The case we want to test
+            BusySlots = null
         };
 
         var date = new DateTime(2025, 04, 28); // Monday

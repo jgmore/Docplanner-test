@@ -20,7 +20,8 @@ DotEnv.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
-var rawUsers = Environment.GetEnvironmentVariable("AUTH_USERS");
+// Load user credentials
+var rawUsers = Environment.GetEnvironmentVariable("AUTH_USERS"); // Authentication credentials are stored in a environment variable for simplicity, this can be implemented in different ways for a more robust application, from having the credentials in a database to have a connection to another API where the credentials are checked or even both for two force authentication.
 var userCredentials = rawUsers?
     .Split(',', StringSplitOptions.RemoveEmptyEntries)
     .Select(entry => entry.Split(':'))
@@ -34,6 +35,7 @@ var userCredentials = rawUsers?
 
 builder.Services.AddSingleton(userCredentials);
 
+// Configure JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -50,6 +52,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+
+// Add CORS policy
 var allowedOrigin = builder.Configuration.GetSection("AllowedCorsOrigins").Get<string[]>();
 
 builder.Services.AddCors(options =>
@@ -63,6 +67,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddControllers();
+// Add Fluent Validation
 builder.Services.AddValidatorsFromAssemblyContaining<BookingRequestValidator>();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
@@ -75,7 +80,7 @@ builder.Services.AddControllers()
             System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
 
-        // Registrar conversores personalizados
+        // Register Custom Converters
         options.JsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
     });
 builder.Services.AddEndpointsApiExplorer();
@@ -104,6 +109,7 @@ int tokenLimit = rateLimitSection.GetValue<int>("TokenLimit");
 int tokensPerPeriod = rateLimitSection.GetValue<int>("TokensPerPeriod");
 int replenishmentSeconds = rateLimitSection.GetValue<int>("ReplenishmentSeconds");
 
+// Configure rate limits per Ip
 builder.Services.AddRateLimiter(options =>
 {
     options.AddPolicy("PerIpPolicy", httpContext =>
@@ -150,7 +156,7 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddLogging();
 var app = builder.Build();
 
-// Registrar middleware de manejo de errores (debe ir primero)
+// Register error handling middleware
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.UseHttpsRedirection();

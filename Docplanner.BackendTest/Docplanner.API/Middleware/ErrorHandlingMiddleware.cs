@@ -33,7 +33,7 @@ public class ErrorHandlingMiddleware
 
     private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        var code = HttpStatusCode.InternalServerError; // 500 por defecto
+        var code = HttpStatusCode.InternalServerError; // 500 by default
 
         if (exception is ArgumentException)
             code = HttpStatusCode.BadRequest; // 400

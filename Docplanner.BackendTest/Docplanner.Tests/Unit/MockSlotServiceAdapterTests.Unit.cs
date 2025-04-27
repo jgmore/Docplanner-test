@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Docplanner.Tests.Unit;
 
+[Trait("Category", "Unit")]
 public class MockSlotServiceAdapterTests
 {
     private readonly MockSlotServiceAdapter _adapter;
@@ -177,7 +178,7 @@ public class MockSlotServiceAdapterTests
 
         // Assert
         Assert.False(result.Success);
-        Assert.Equal("Invalid slot times", result.Message); // Since it first checks Start/End
+        Assert.Equal("Invalid slot times", result.Message);
         Assert.Contains("Start and End times are required", result.Errors);
     }
 

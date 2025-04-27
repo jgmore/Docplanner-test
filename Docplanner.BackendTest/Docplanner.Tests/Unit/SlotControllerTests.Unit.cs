@@ -8,6 +8,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Docplanner.Tests.Unit;
 
+[Trait("Category", "Unit")]
 public class SlotControllerTests
 {
     private readonly Mock<ISlotService> _serviceMock = new();

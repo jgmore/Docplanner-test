@@ -8,9 +8,13 @@ using System.Net.Http.Headers;
 using dotenv.net;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
+using Docplanner.Application.Interfaces;
+using Moq;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Docplanner.Tests.Integration;
 
+[Trait("Category", "Integration")]
 public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client;
@@ -48,17 +52,22 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
         return doc.RootElement.GetProperty("token").GetString()!;
     }
 
+    private async Task<bool> AddAuthenticationToken(HttpClient client)
+    {
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await GetJwtTokenAsync());
+        return true;
+    }
+
 
     [Fact]
     public async Task GetWeeklyAvailability_ReturnsSuccess()
     {
         // Act
-        var token = await GetJwtTokenAsync();
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        await AddAuthenticationToken(_client);
 
         var response = await _client.GetAsync("/api/slots/week/20250421");
 
-        // Configura manualmente las opciones de serialización para los tests
+        // Configure manually the serialization options
         var options = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
@@ -87,9 +96,61 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
     }
 
     [Fact]
+    public async Task GetWeeklyAvailability_Unauthorized_WithoutToken()
+    {
+        // Arrange
+        var monday = "20250421";
+
+        // Act
+        var response = await _client.GetAsync($"/api/slots/week/{monday}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetWeeklyAvailability_ReturnsError_WhenExternalServiceFails()
+    {
+        // Arrange
+        var factory = new TestWebApplicationFactory();
+
+        var client = factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                // Replace ISlotServiceAdapter with a throwing mock
+                var descriptor = services.SingleOrDefault(
+                    d => d.ServiceType == typeof(ISlotServiceAdapter));
+                if (descriptor != null)
+                {
+                    services.Remove(descriptor);
+                }
+
+                var mockAdapter = new Mock<ISlotServiceAdapter>();
+                mockAdapter.Setup(m => m.FetchWeeklyAvailabilityAsync(It.IsAny<string>()))
+                           .ThrowsAsync(new ApplicationException("Simulated external service failure"));
+
+                services.AddScoped(_ => mockAdapter.Object);
+            });
+        }).CreateClient();
+
+        await AddAuthenticationToken(client);
+
+        var monday = "20250422";
+
+        // Act
+        var response = await client.GetAsync($"/api/slots/week/{monday}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+    }
+
+
+
+    [Fact]
     public async Task BookSlot_ReturnsBadRequest_WhenDataInvalid()
     {
-        // Arrange - Creamos un request con datos inválidos
+        // Arrange
         var request = new BookingRequestDto
         {
             Start = "",
@@ -101,8 +162,7 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
         };
 
         // Act
-        var token = await GetJwtTokenAsync();
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        await AddAuthenticationToken(_client);
         var response = await _client.PostAsJsonAsync("/api/slots/book", request);
 
         // Assert
@@ -113,7 +173,7 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
     [Fact]
     public async Task BookSlot_ReturnsSuccess_WhenDataValid()
     {
-        // Arrange - Creamos un request con datos válidos
+        // Arrange
         var request = new BookingRequestDto
         {
             FacilityId = "Id1",
@@ -130,8 +190,7 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
         };
 
         // Act
-        var token = await GetJwtTokenAsync();
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        await AddAuthenticationToken(_client);
         var response = await _client.PostAsJsonAsync("/api/slots/book", request);
         var content = await response.Content.ReadFromJsonAsync<ApiResponseDto<bool>>();
 
@@ -143,10 +202,27 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
     }
 
     [Fact]
+    public async Task BookSlot_ReturnsBadRequest_WhenPayloadIsInvalid()
+    {
+        // Arrange
+        await AddAuthenticationToken(_client);
+
+        var invalidRequestJson = "{}"; // Missing required fields
+
+        var content = new StringContent(invalidRequestJson, Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await _client.PostAsync("/api/slots/book", content);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+
+    [Fact]
     public async Task BookAndGetSlots_RoundTrip()
     {
-        var token = await GetJwtTokenAsync();
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        await AddAuthenticationToken(_client);
 
         var responseGet = await _client.GetAsync("/api/slots/week/20250421");
 

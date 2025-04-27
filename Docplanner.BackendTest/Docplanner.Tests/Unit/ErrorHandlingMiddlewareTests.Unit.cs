@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Docplanner.Tests.Unit;
 
+[Trait("Category", "Unit")]
 public class ErrorHandlingMiddlewareTests
 {
     private readonly Mock<ILogger<ErrorHandlingMiddleware>> _loggerMock;

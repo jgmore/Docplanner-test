@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Docplanner.Tests.Unit;
 
+[Trait("Category", "Unit")]
 public class DateTimeJsonConverterTests
 {
     private readonly JsonSerializerOptions _options;

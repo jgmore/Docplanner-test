@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Docplanner.Tests.Integration;
 
+[Trait("Category", "Integration")]
 public class RateLimiterTests
 {
     [Fact]

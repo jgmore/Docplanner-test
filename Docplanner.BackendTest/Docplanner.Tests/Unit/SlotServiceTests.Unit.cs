@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 
 namespace Docplanner.Tests.Unit;
 
+[Trait("Category", "Unit")]
 public class SlotServiceTests
 {
     private readonly Mock<ISlotServiceAdapter> _adapterMock;
@@ -43,19 +44,19 @@ public class SlotServiceTests
     }
 
     [Fact]
-    public async Task SlotService_ThrowException_OnNullAdapter()
+    public void SlotService_ThrowException_OnNullAdapter()
     {
         Exception actualException = Assert.Throws<ArgumentNullException>(() => new SlotService(null, _loggerMock.Object, _memoryCache, createRetryOption()));
     }
 
     [Fact]
-    public async Task SlotService_ThrowException_OnNullLogger()
+    public void SlotService_ThrowException_OnNullLogger()
     {
         Exception actualException = Assert.Throws<ArgumentNullException>(() => new SlotService(_adapterMock.Object, null, _memoryCache, createRetryOption()));
     }
 
     [Fact]
-    public async Task SlotService_ThrowException_OnNullCache()
+    public void SlotService_ThrowException_OnNullCache()
     {
         Exception actualException = Assert.Throws<ArgumentNullException>(() => new SlotService(_adapterMock.Object, _loggerMock.Object, null, createRetryOption()));
     }

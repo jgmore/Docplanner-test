@@ -62,14 +62,14 @@ public class SlotServiceAdapter(HttpClient client, IOptions<SlotApiOptions> opti
 
         var availableSlots = new List<AvailabilitySlotDto>();
 
-        // Parseamos la fecha del lunes para tener una referencia
+        // Parse Monday date
         if (!DateTime.TryParseExact(mondayString, "yyyyMMdd",
             CultureInfo.InvariantCulture, DateTimeStyles.None, out var mondayDate))
         {
             return new List<AvailabilitySlotDto>();
         }
 
-        // Procesamos cada día de la semana
+        // Process all week days
         var weekDays = new (DayAvailabilityDto? Day, int Offset, string Name)[]
         {
             (weeklyAvailability.Monday, 0, "Monday"),
@@ -103,7 +103,7 @@ public class SlotServiceAdapter(HttpClient client, IOptions<SlotApiOptions> opti
         var workPeriod = dayAvailability.WorkPeriod;
         var busySlots = dayAvailability.BusySlots ?? new List<TimeSlotDto>();
 
-        // Generamos los slots para el período de mañana y tarde
+        // Generate slots before lunch and after lunch
         GenerateAvailableSlots(
             date.AddHours(workPeriod.StartHour),
             date.AddHours(workPeriod.LunchStartHour),
@@ -135,7 +135,7 @@ public class SlotServiceAdapter(HttpClient client, IOptions<SlotApiOptions> opti
         {
             var currentSlotEnd = currentSlotStart.AddMinutes(slotDurationMinutes);
 
-            // Verificamos si el slot está ocupado
+            // Verify if the slot is busy
             bool isSlotBusy = busySlots.Any(busy =>
                 (busy.Start <= currentSlotStart && busy.End > currentSlotStart) ||
                 (busy.Start < currentSlotEnd && busy.End >= currentSlotEnd) ||
@@ -160,7 +160,6 @@ public class SlotServiceAdapter(HttpClient client, IOptions<SlotApiOptions> opti
     {
         AddAuthHeader();
 
-        // Validamos la estructura del request
         if (request.Patient == null)
         {
             return ApiResponseDto<bool>.CreateError(

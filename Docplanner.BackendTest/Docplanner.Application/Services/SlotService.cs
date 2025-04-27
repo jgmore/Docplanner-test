@@ -86,9 +86,16 @@ public class SlotService : ISlotService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching availability for week starting {Monday}", monday);
+            string logMessage = "Error fetching availability for week starting {Monday}";
+            string responseMessage = "Error retrieving availability";
+            if (ex is ApplicationException)
+            {
+                logMessage += " on external Slot Service";
+                responseMessage = " on external Slot Service";
+            }
+            _logger.LogError(ex, logMessage , monday);
             return ApiResponseDto<IEnumerable<AvailabilitySlotDto>>.CreateError(
-                "Error retrieving availability",
+                responseMessage,
                 new[] { ex.Message }
             );
         }
@@ -142,9 +149,16 @@ public class SlotService : ISlotService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error booking slot");
+            string logMessage = "Error booking slot";
+            string responseMessage = "Error processing booking";
+            if (ex is ApplicationException)
+            {
+                logMessage += " on external Slot Service";
+                responseMessage = " on external Slot Service";
+            }
+            _logger.LogError(ex, logMessage);
             return ApiResponseDto<bool>.CreateError(
-                "Error processing booking",
+                responseMessage,
                 new[] { ex.Message }
             );
         }

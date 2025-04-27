@@ -8,10 +8,9 @@ public class ApiResponseDto<T>
     public T? Data { get; set; }
     public IEnumerable<string>? Errors { get; set; }
 
-    // Constructor vacío
     public ApiResponseDto() { }
 
-    // Métodos estáticos para facilitar la creación de respuestas comunes
+    // Static methods to facilitate the creation of common responses
     public static ApiResponseDto<T> CreateSuccess(string facilityId, T data, string message = "Operation completed successfully")
     {
         return new ApiResponseDto<T>

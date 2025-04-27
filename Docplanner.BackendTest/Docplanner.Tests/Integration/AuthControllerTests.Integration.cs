@@ -7,6 +7,7 @@ using Docplanner.Common.DTOs;
 
 namespace Docplanner.Tests.Integration;
 
+[Trait("Category", "Integration")]
 public class AuthControllerIntegrationTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client;

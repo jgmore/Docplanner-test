@@ -8,6 +8,7 @@ using Moq;
 
 namespace Docplanner.Tests.Integration;
 
+[Trait("Category", "Integration")]
 public class SlotServiceIntegrationTests
 {
     private readonly SlotService _service;
