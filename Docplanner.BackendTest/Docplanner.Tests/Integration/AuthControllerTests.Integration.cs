@@ -20,9 +20,12 @@ public class AuthControllerIntegrationTests : IClassFixture<TestWebApplicationFa
     }
 
 
+
     [Fact]
     public async Task Login_ShouldReturnToken_WhenCredentialsAreValid()
     {
+        // Arrange
+        CommonTestsFunctionality.SetRandomForwardedIp(_client);
         var rawUsers = Environment.GetEnvironmentVariable("AUTH_USERS");
         var firstUserCredential = rawUsers?
             .Split(',', StringSplitOptions.RemoveEmptyEntries)
@@ -39,8 +42,10 @@ public class AuthControllerIntegrationTests : IClassFixture<TestWebApplicationFa
         loginDto.Username = firstUserCredential.Username;
         loginDto.Password = firstUserCredential.Password;
 
+        // Act
         var response = await _client.PostAsJsonAsync("/api/Auth/login", loginDto);
 
+        // Assert
         response.EnsureSuccessStatusCode();
         var json = await response.Content.ReadAsStringAsync();
         Assert.Contains("token", json);
@@ -49,7 +54,11 @@ public class AuthControllerIntegrationTests : IClassFixture<TestWebApplicationFa
     [Fact]
     public async Task ProtectedEndpoint_ShouldReturnUnauthorized_WhenNoTokenProvided()
     {
+        // Arrange
+        CommonTestsFunctionality.SetRandomForwardedIp(_client);
+        // Act
         var response = await _client.GetAsync("/api/slots/week/20250421");
+        // Assert
         Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
@@ -60,6 +69,8 @@ public class AuthControllerIntegrationTests : IClassFixture<TestWebApplicationFa
     [InlineData("PATCH", "/api/Auth/login")]
     public async Task BookEndpoint_ShouldReturn_405_ForUnsupportedVerbs(string method, string url)
     {
+        // Arrange
+        CommonTestsFunctionality.SetRandomForwardedIp(_client);
         // Act
         var request = new HttpRequestMessage(new HttpMethod(method), url)
         {

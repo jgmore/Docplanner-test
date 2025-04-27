@@ -11,7 +11,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder
+        builder.UseEnvironment("Testing")
             .UseContentRoot(Directory.GetCurrentDirectory()) // Ensures base path is the test project folder
             .ConfigureAppConfiguration((context, configBuilder) =>
             {

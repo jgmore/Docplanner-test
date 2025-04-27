@@ -14,6 +14,20 @@ using FluentValidation.AspNetCore;
 using Docplanner.Application.Validators;
 using FluentValidation;
 using Docplanner.Common.DTOs;
+using System.Net;
+
+static bool IsPrivateIp(IPAddress ipAddress)
+{
+    if (ipAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+    {
+        var bytes = ipAddress.GetAddressBytes();
+        return (bytes[0] == 10)
+            || (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
+            || (bytes[0] == 192 && bytes[1] == 168);
+    }
+    return false;
+}
+
 
 // Load .env file into environment
 DotEnv.Load();
@@ -52,6 +66,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// Used to skip rate limit on tests
+var useForwardedHeaders = builder.Environment.IsEnvironment("Testing"); // Create an environment called "Testing" for tests
+if (useForwardedHeaders)
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor;
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
+}
 
 // Add CORS policy
 var allowedOrigin = builder.Configuration.GetSection("AllowedCorsOrigins").Get<string[]>();
@@ -114,10 +139,15 @@ builder.Services.AddRateLimiter(options =>
 {
     options.AddPolicy("PerIpPolicy", httpContext =>
     {
-        var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        // Prefer X-Forwarded-For if present and private
+        var remoteIp = httpContext.Connection.RemoteIpAddress;
+        var ip = remoteIp is { } && IsPrivateIp(remoteIp)
+            ? httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault() ?? remoteIp.ToString()
+            : remoteIp?.ToString() ?? "unknown";
+
         return RateLimitPartition.GetTokenBucketLimiter(ip, key => new TokenBucketRateLimiterOptions
         {
-            TokenLimit = tokenLimit, 
+            TokenLimit = tokenLimit,
             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
             QueueLimit = 0,
             ReplenishmentPeriod = TimeSpan.FromSeconds(replenishmentSeconds),
@@ -134,6 +164,7 @@ builder.Services.AddRateLimiter(options =>
         return ValueTask.CompletedTask;
     };
 });
+
 
 builder.Services.Configure<SlotApiOptions>(builder.Configuration.GetSection("SlotApi"));
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
@@ -159,6 +190,11 @@ var app = builder.Build();
 // Register error handling middleware
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
+if (app.Environment.IsEnvironment("Testing"))
+{
+    app.UseForwardedHeaders();
+}
+
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseCors("SwaggerOnly");
@@ -173,3 +209,5 @@ app.MapControllers().RequireRateLimiting("PerIpPolicy");
 app.Run();
 
 public partial class Program { }
+
+

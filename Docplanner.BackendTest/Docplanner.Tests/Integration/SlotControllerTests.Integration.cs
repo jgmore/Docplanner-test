@@ -62,6 +62,8 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
     [Fact]
     public async Task GetWeeklyAvailability_ReturnsSuccess()
     {
+        // Arrange
+        CommonTestsFunctionality.SetRandomForwardedIp(_client);
         // Act
         await AddAuthenticationToken(_client);
 
@@ -99,6 +101,7 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
     public async Task GetWeeklyAvailability_Unauthorized_WithoutToken()
     {
         // Arrange
+        CommonTestsFunctionality.SetRandomForwardedIp(_client);
         var monday = "20250421";
 
         // Act
@@ -112,6 +115,7 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
     public async Task GetWeeklyAvailability_ReturnsError_WhenExternalServiceFails()
     {
         // Arrange
+        CommonTestsFunctionality.SetRandomForwardedIp(_client);
         var factory = new TestWebApplicationFactory();
 
         var client = factory.WithWebHostBuilder(builder =>
@@ -151,6 +155,7 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
     public async Task BookSlot_ReturnsBadRequest_WhenDataInvalid()
     {
         // Arrange
+        CommonTestsFunctionality.SetRandomForwardedIp(_client);
         var request = new BookingRequestDto
         {
             Start = "",
@@ -174,6 +179,7 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
     public async Task BookSlot_ReturnsSuccess_WhenDataValid()
     {
         // Arrange
+        CommonTestsFunctionality.SetRandomForwardedIp(_client);
         var request = new BookingRequestDto
         {
             FacilityId = "Id1",
@@ -205,6 +211,7 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
     public async Task BookSlot_ReturnsBadRequest_WhenPayloadIsInvalid()
     {
         // Arrange
+        CommonTestsFunctionality.SetRandomForwardedIp(_client);
         await AddAuthenticationToken(_client);
 
         var invalidRequestJson = "{}"; // Missing required fields
@@ -222,6 +229,7 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
     [Fact]
     public async Task BookAndGetSlots_RoundTrip()
     {
+        CommonTestsFunctionality.SetRandomForwardedIp(_client);
         await AddAuthenticationToken(_client);
 
         var responseGet = await _client.GetAsync("/api/slots/week/20250421");
@@ -272,6 +280,8 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
     [InlineData("PATCH", "/api/slots/week/20250421")]
     public async Task WeekEndpoint_ShouldReturn_405_ForUnsupportedVerbs(string method, string url)
     {
+        // Arrange
+        CommonTestsFunctionality.SetRandomForwardedIp(_client);
         // Act
         var request = new HttpRequestMessage(new HttpMethod(method), url);
         var response = await _client.SendAsync(request);
@@ -287,6 +297,8 @@ public class SlotControllerIntegrationTests : IClassFixture<TestWebApplicationFa
     [InlineData("PATCH", "/api/slots/book")]
     public async Task BookEndpoint_ShouldReturn_405_ForUnsupportedVerbs(string method, string url)
     {
+        // Arrange
+        CommonTestsFunctionality.SetRandomForwardedIp(_client);
         // Act
         var request = new HttpRequestMessage(new HttpMethod(method), url)
         {
