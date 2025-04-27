@@ -35,7 +35,8 @@ The project provides a **REST API** that:
    ```
 
 3. **Create `.env` files:**
--In the `Docplanner.API` directory inside `Docplanner.BackendTest` folder, create a `.env` file with the following environment variables:
+
+   -In the `Docplanner.API` directory inside `Docplanner.BackendTest` folder, create a `.env` file with the following environment variables:
 
    ```env
    SlotApi__Username=techuser
@@ -44,7 +45,7 @@ The project provides a **REST API** that:
    AUTH_USERS=user1:pass1,user2:pass2,user3:pass3
    ```
    
--In the `Docplanner.Tests` directory inside `Docplanner-test` folder, create a `.env` file with the following environment variables:
+   -In the `Docplanner.Tests` directory inside `Docplanner-test` folder, create a `.env` file with the following environment variables:
 
    ```env
    SlotApi__Username=user
